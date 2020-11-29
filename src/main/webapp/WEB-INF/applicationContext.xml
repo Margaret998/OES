@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context = "http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:security="http://www.springframework.org/schema/security"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans.xsd
+    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context-4.3.xsd
+    http://www.springframework.org/schema/tx
+    http://www.springframework.org/schema/tx/spring-tx.xsd 
+    http://www.springframework.org/schema/security 
+    http://www.springframework.org/schema/security/spring-security.xsd
+" >
+
+    
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+    <!--    <bean class="org.springframework.web.servlet.mvc.annotation.DefaultAnnotationHandlerMapping"/>-->
+    
+    
+    <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="driverClassName" value="com.mysql.cj.jdbc.Driver"/>
+        <property name="url" value="jdbc:mysql://localhost:3306/OESdb?autoReconnect=true&amp;useSSL=false" />
+        <property name="username" value="root" />
+        <property name="password" value="toor" />
+    </bean>
+    
+    <bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource" />
+    </bean>  
+    
+    
+    <bean id="sessionFactory" class="org.springframework.orm.hibernate5.LocalSessionFactoryBean">
+        <property name="dataSource" ref="dataSource" />
+        <property name="annotatedClasses" >
+            <list>
+                <value>com.pct.oes.model.UserModel</value>
+                <value>com.pct.oes.model.StudentModel</value>
+                <value>com.pct.oes.model.TeacherModel</value>
+                <value>com.pct.oes.model.StudentModel</value>
+                <value>com.pct.oes.model.QuestionModel</value>
+                <value>com.pct.oes.model.ExamModel</value>
+                <value>com.pct.oes.model.MultipleChoiceQuestionModel</value>
+                <value>com.pct.oes.model.ExamQuestionsModel</value>
+                <value>com.pct.oes.model.ExamResultModel</value>
+                <value>com.pct.oes.model.ExamStudentsModel</value>
+                <value>com.pct.oes.model.StudentAnswerModel</value>
+                <value>com.pct.oes.model.SubjectModel</value>
+                <value>com.pct.oes.model.ClassesModel</value>
+                <value>com.pct.oes.model.CollegeModel</value>
+                <value>com.pct.oes.model.TeacherAssignedToModel</value>
+            </list>
+        </property>
+        <property name="hibernateProperties">
+            <props>
+                <prop key="hibernate.dialect">org.hibernate.dialect.MySQLDialect </prop>
+                <prop key="hibernate.show_sql">true</prop>
+                <!--                <prop name="hibernate.connection.url">jdbc:h2:mem:spring_hibernate_one_to_many</prop>-->
+            </props>
+        </property>
+    </bean>
+
+    <bean id="transactionManager" class="org.springframework.orm.hibernate5.HibernateTransactionManager">
+        <property name="sessionFactory" ref="sessionFactory" />
+    </bean>
+    
+    <bean id="bCryptPasswordEncoder"
+          class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder">
+    </bean>
+    
+    <security:http auto-config="true">
+        <security:intercept-url pattern="/admin/**" access="hasRole('ROLE_ADMIN')" />
+        <security:intercept-url pattern="/student/**" access="hasRole('ROLE_STUDENT')" />
+        <security:intercept-url pattern="/teacher/**" access="hasRole('ROLE_TEACHER')" />
+        <security:form-login
+            login-page="/login"
+            default-target-url="/login"
+            authentication-failure-url="/login?error"
+            username-parameter="userID"
+            password-parameter="password" />
+        <security:logout
+            logout-success-url="/login?logout" />
+    </security:http>
+
+    <security:global-method-security secured-annotations="enabled" />
+    <security:authentication-manager>
+        <security:authentication-provider>
+            <security:password-encoder ref="bCryptPasswordEncoder" />
+            <security:jdbc-user-service data-source-ref="dataSource"
+                                        users-by-username-query="SELECT userID,password,enabled FROM users WHERE userID = ?"
+                                        authorities-by-username-query="SELECT userID,userRole From users WHERE userID = ?"
+            />
+        </security:authentication-provider>
+    </security:authentication-manager>
+
+
+</beans>
